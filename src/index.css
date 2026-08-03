@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tsoka-deep: #062B32;
+  --color-tsoka-teal: #06515E;
+  --color-tsoka-mid:  #0E7C86;
+  --color-tsoka-warm: #E8763A;
+  --color-tsoka-wash: #EEF4F4;
+}
