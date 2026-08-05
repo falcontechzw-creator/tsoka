@@ -7,8 +7,11 @@ import PatientsPage from './components/PatientsPage'
 import PatientDetail from './components/PatientDetail'
 import Dashboard from './components/Dashboard'
 import DevicesPage from './components/DevicesPage'
+import SettingsPage from './components/SettingsPage'
 import LoginPage from './components/LoginPage'
 import PatientApp from './components/patient/PatientApp'
+import ConnectionBanner from './components/ConnectionBanner'
+import { startQueue } from './lib/offline'
 import { Construction, Loader2 } from 'lucide-react'
 
 type Role = 'patient' | 'nurse' | 'clinic_admin' | 'cimas_admin'
@@ -22,6 +25,9 @@ export default function App() {
   const [openPatient, setOpenPatient] = useState<string | null>(null)
   const [alertCount, setAlertCount] = useState(0)
 
+  // Start watching for the connection coming back.
+  useEffect(() => { startQueue() }, [])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -34,7 +40,7 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  // Detect the signed-in user's role, then route accordingly.
+  // Work out the signed-in user's role, then route accordingly.
   useEffect(() => {
     if (!session) return
     setChecking(true)
@@ -45,7 +51,7 @@ export default function App() {
         .eq('id', session.user.id)
         .maybeSingle()
 
-      setRole(((data?.role ?? 'patient') as Role))
+      setRole((data?.role ?? 'patient') as Role)
 
       if (data?.clinic_id) {
         const { data: c } = await supabase
@@ -76,9 +82,14 @@ export default function App() {
     )
   }
 
-  // Patients get their own simple view.
+  // Patients get their own interface.
   if (role === 'patient') {
-    return <PatientApp email={session.user.email ?? ''} />
+    return (
+      <>
+        <ConnectionBanner />
+        <PatientApp email={session.user.email ?? ''} />
+      </>
+    )
   }
 
   const placeholder = (title: string, note: string) => (
@@ -97,26 +108,29 @@ export default function App() {
   )
 
   return (
-    <AppShell
-      active={nav}
-      onNavigate={(k) => { setNav(k); setOpenPatient(null) }}
-      userEmail={session.user.email ?? 'user'}
-      clinicName={clinicName ?? (role === 'cimas_admin' ? 'Cimas Health Group' : null)}
-      alertCount={alertCount}
-      onSignOut={() => supabase.auth.signOut()}
-    >
-      {nav === 'patients' && (
-        openPatient
-          ? <PatientDetail patientId={openPatient} onBack={() => setOpenPatient(null)} />
-          : <PatientsPage onOpen={setOpenPatient} />
-      )}
-      {nav === 'overview' && (
-        <Dashboard onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
-      )}
-      {nav === 'devices' && <DevicesPage />}
-      {nav === 'alerts' && placeholder('Alerts', 'Open alerts appear on Patients and Overview.')}
-      {nav === 'reports' && placeholder('Reports', 'Exportable clinical and cost reports.')}
-      {nav === 'settings' && placeholder('Settings', 'Account, clinic and threshold settings.')}
-    </AppShell>
+    <>
+      <ConnectionBanner />
+      <AppShell
+        active={nav}
+        onNavigate={(k) => { setNav(k); setOpenPatient(null) }}
+        userEmail={session.user.email ?? 'user'}
+        clinicName={clinicName ?? (role === 'cimas_admin' ? 'Cimas Health Group' : null)}
+        alertCount={alertCount}
+        onSignOut={() => supabase.auth.signOut()}
+      >
+        {nav === 'patients' && (
+          openPatient
+            ? <PatientDetail patientId={openPatient} onBack={() => setOpenPatient(null)} />
+            : <PatientsPage onOpen={setOpenPatient} />
+        )}
+        {nav === 'overview' && (
+          <Dashboard onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
+        )}
+        {nav === 'devices' && <DevicesPage />}
+        {nav === 'alerts' && placeholder('Alerts', 'Open alerts appear on Patients and Overview.')}
+        {nav === 'reports' && placeholder('Reports', 'Exportable clinical and cost reports.')}
+        {nav === 'settings' && <SettingsPage myRole={role ?? 'nurse'} />}
+      </AppShell>
+    </>
   )
 }

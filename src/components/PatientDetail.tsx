@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { enqueue } from '../lib/offline'
 import FootMap from './FootMap'
 import Vitals from './Vitals'
 import DeviceSimulator from './DeviceSimulator'
@@ -79,13 +80,30 @@ export default function PatientDetail({ patientId, onBack }: Props) {
     setSaving(true)
     setError('')
 
+    const readingRows = FOOT_POSITIONS.flatMap((pos) => ([
+      { foot: 'L', position: pos, temperature_c: Number(entry[`L_${pos}`]) },
+      { foot: 'R', position: pos, temperature_c: Number(entry[`R_${pos}`]) },
+    ]))
+
+    if (!navigator.onLine) {
+      enqueue('scan', { patient_id: patientId, readings: readingRows })
+      setError('Saved on this device. It will upload and be scored when you are back online.')
+      setEntry(blankEntry()); setEntering(false); setSaving(false)
+      return
+    }
+
     const { data: scan, error: e1 } = await supabase
       .from('scans')
       .insert({ patient_id: patientId })
       .select()
       .single()
 
-    if (e1 || !scan) { setError(e1?.message ?? 'Could not create scan'); setSaving(false); return }
+    if (e1 || !scan) {
+      enqueue('scan', { patient_id: patientId, readings: readingRows })
+      setError('Could not reach the server. Saved on this device for later.')
+      setEntry(blankEntry()); setEntering(false); setSaving(false)
+      return
+    }
 
     const rows = FOOT_POSITIONS.flatMap((pos) => ([
       { scan_id: scan.id, foot: 'L', position: pos, temperature_c: Number(entry[`L_${pos}`]) },
