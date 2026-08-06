@@ -1,16 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   Mail, Lock, Eye, EyeOff, ShieldCheck, Footprints, UserPlus,
-  ArrowLeft, BadgeCheck, Loader2,
+  ArrowLeft, BadgeCheck, Loader2, Building2, IdCard, Phone,
 } from 'lucide-react'
 
 type Mode = 'signin' | 'signup'
+type Clinic = { id: string; name: string }
 
 /** Decorative foot heat-map motif used in the hero panel. */
 function HeatMapArt() {
   const points: [number, number, string, number][] = [
-    // x, y, colour, radius
     [30, 12, '#F2A65A', 7],
     [32, 34, '#3FA7A7', 6],
     [50, 31, '#3FA7A7', 6],
@@ -65,11 +65,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [nationalId, setNationalId] = useState('')
+  const [phone, setPhone] = useState('')
+  const [clinicId, setClinicId] = useState('')
+  const [clinics, setClinics] = useState<Clinic[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  // Clinics are readable before sign in so the signup form can list them.
+  useEffect(() => {
+    supabase.from('clinics').select('id, name').order('name')
+      .then(({ data }) => setClinics((data ?? []) as Clinic[]))
+  }, [])
 
   async function submit() {
     setError(''); setNotice(''); setBusy(true)
@@ -77,21 +87,34 @@ export default function LoginPage() {
     if (mode === 'signin') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError(error.message)
-    } else {
-      if (!fullName.trim()) { setError('Enter your full name.'); setBusy(false); return }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters.'); setBusy(false); return
-      }
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName.trim(), role: 'patient' } },
-      })
-      if (error) setError(error.message)
-      else if (!data.session) {
-        setNotice('Account created. Check your email to confirm, then sign in.')
-        setMode('signin')
-      }
+      setBusy(false)
+      return
+    }
+
+    if (!fullName.trim()) { setError('Enter your full name.'); setBusy(false); return }
+    if (!clinicId) { setError('Choose the clinic you attend.'); setBusy(false); return }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.'); setBusy(false); return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          clinic_id: clinicId,
+          national_id: nationalId.trim(),
+          phone: phone.trim(),
+        },
+      },
+    })
+
+    if (error) setError(error.message)
+    else if (!data.session) {
+      setNotice('Account created. Confirm your email, then sign in. Your clinic will '
+              + 'connect your record when they next see you.')
+      setMode('signin')
     }
     setBusy(false)
   }
@@ -118,7 +141,6 @@ export default function LoginPage() {
         <section className="relative hidden lg:flex flex-col justify-between p-10
                             bg-gradient-to-br from-tsoka-deep via-tsoka-teal to-[#04363F]
                             overflow-hidden">
-          {/* soft ambient shapes */}
           <div aria-hidden className="absolute -top-24 -right-24 w-80 h-80 rounded-full
                                       bg-tsoka-mid/20 blur-3xl" />
           <div aria-hidden className="absolute -bottom-32 -left-16 w-72 h-72 rounded-full
@@ -170,7 +192,6 @@ export default function LoginPage() {
         {/* ---------------- auth card ---------------- */}
         <section className="flex items-center justify-center p-6 sm:p-10">
           <div className="w-full max-w-sm">
-            {/* compact brand for small screens */}
             <div className="lg:hidden flex items-center gap-2.5 mb-8">
               <div className="w-11 h-11 rounded-2xl bg-tsoka-deep grid place-items-center">
                 <Footprints size={21} className="text-tsoka-warm" strokeWidth={2.2} />
@@ -196,29 +217,85 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               {mode === 'signin' ? 'Welcome back' : 'Create your account'}
             </h2>
-            <p className="text-slate-500 text-sm mt-1 mb-7">
+            <p className="text-slate-500 text-sm mt-1 mb-6">
               {mode === 'signin'
                 ? 'Sign in to access your account'
                 : 'For patients monitoring their own foot health'}
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {mode === 'signup' && (
-                <div>
-                  <label htmlFor="name"
-                         className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Full name
-                  </label>
-                  <div className="relative">
-                    <UserPlus size={17}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="name" type="text" autoComplete="name"
-                      value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Tendai Moyo" className={field}
-                    />
+                <>
+                  <div>
+                    <label htmlFor="name"
+                           className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Full name
+                    </label>
+                    <div className="relative">
+                      <UserPlus size={17}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="name" type="text" autoComplete="name"
+                        value={fullName} onChange={(e) => setFullName(e.target.value)}
+                        placeholder="As written on your clinic record" className={field}
+                      />
+                    </div>
                   </div>
-                </div>
+
+                  <div>
+                    <label htmlFor="clinic"
+                           className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Which clinic do you attend?
+                    </label>
+                    <div className="relative">
+                      <Building2 size={17}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <select
+                        id="clinic" value={clinicId}
+                        onChange={(e) => setClinicId(e.target.value)}
+                        className={`${field} appearance-none`}
+                      >
+                        <option value="">Select your clinic</option>
+                        {clinics.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="nid"
+                             className="block text-sm font-medium text-slate-700 mb-1.5">
+                        ID number
+                      </label>
+                      <div className="relative">
+                        <IdCard size={17}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="nid" type="text" value={nationalId}
+                          onChange={(e) => setNationalId(e.target.value)}
+                          placeholder="Optional" className={field}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="phone"
+                             className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Phone
+                      </label>
+                      <div className="relative">
+                        <Phone size={17}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="phone" type="tel" value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="Optional" className={field}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
 
               <div>
@@ -296,9 +373,7 @@ export default function LoginPage() {
                            focus-visible:ring-tsoka-mid focus-visible:ring-offset-2"
               >
                 {busy && <Loader2 size={17} className="animate-spin" />}
-                {busy
-                  ? 'Please wait…'
-                  : mode === 'signin' ? 'Sign in' : 'Create account'}
+                {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
               </button>
 
               {error && (
@@ -346,6 +421,9 @@ export default function LoginPage() {
                   <UserPlus size={16} />
                   Create patient account
                 </button>
+                <p className="text-xs text-slate-400 mt-3 leading-relaxed">
+                  Clinic staff accounts are created by your administrator.
+                </p>
               </div>
             )}
           </div>
@@ -354,3 +432,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

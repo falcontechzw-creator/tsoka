@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import PatientShell from './PatientShell'
 import type { PatientNav } from './PatientShell'
@@ -7,13 +7,40 @@ import {
   FootHealth, Readings, Appointments, Medication, Messages, Help, Profile,
 } from './PatientPages'
 import { usePatientData } from './usePatientData'
-import { Loader2, Info, LogOut } from 'lucide-react'
+import { Loader2, Clock, LogOut, Footprints } from 'lucide-react'
 
 export default function PatientApp({ email }: { email: string }) {
   const [nav, setNav] = useState<PatientNav>('home')
+  const [request, setRequest] = useState<{ status: string; clinic: string | null } | null>(null)
+  const [checkedRequest, setCheckedRequest] = useState(false)
   const d = usePatientData()
 
-  if (d.loading) {
+  // If they have no patient record, find out whether a request is pending.
+  useEffect(() => {
+    if (d.loading || d.patient) { setCheckedRequest(true); return }
+    (async () => {
+      const { data: u } = await supabase.auth.getUser()
+      if (!u.user) { setCheckedRequest(true); return }
+      const { data } = await supabase
+        .from('link_requests')
+        .select('status, clinic_id')
+        .eq('user_id', u.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      let clinic: string | null = null
+      if (data?.clinic_id) {
+        const { data: c } = await supabase.from('clinics')
+          .select('name').eq('id', data.clinic_id).maybeSingle()
+        clinic = c?.name ?? null
+      }
+      setRequest(data ? { status: data.status, clinic } : null)
+      setCheckedRequest(true)
+    })()
+  }, [d.loading, d.patient])
+
+  if (d.loading || !checkedRequest) {
     return (
       <div className="min-h-screen bg-slate-50 grid place-items-center">
         <div className="flex items-center gap-3 text-slate-500">
@@ -24,24 +51,51 @@ export default function PatientApp({ email }: { email: string }) {
     )
   }
 
-  // Signed in, but no patient record is linked to this account yet.
+  // Signed in, but not yet connected to a clinical record.
   if (!d.patient) {
+    const pending = request?.status === 'pending'
     return (
       <div className="min-h-screen bg-slate-50 grid place-items-center p-6">
         <div className="max-w-md w-full rounded-2xl bg-white border border-slate-200
                         shadow-sm p-7 text-center">
           <div className="w-12 h-12 rounded-2xl bg-tsoka-mid/10 grid place-items-center
                           mx-auto mb-4">
-            <Info size={22} className="text-tsoka-teal" />
+            {pending
+              ? <Clock size={22} className="text-tsoka-teal" />
+              : <Footprints size={22} className="text-tsoka-teal" />}
           </div>
+
           <h1 className="text-lg font-bold text-slate-900">
-            Your record is not linked yet
+            {pending ? 'Waiting for your clinic' : 'Your record is not connected yet'}
           </h1>
+
           <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-            Your account <span className="font-medium text-slate-900">{email}</span> is
-            not yet connected to a patient record. Ask your clinic to link it at your
-            next visit, and your screening results will appear here.
+            {pending ? (
+              <>
+                We have sent your request to{' '}
+                <span className="font-medium text-slate-900">
+                  {request?.clinic ?? 'your clinic'}
+                </span>. A member of staff will match it to your file, usually at your
+                next visit. Your results will appear here once that is done.
+              </>
+            ) : (
+              <>
+                Your account <span className="font-medium text-slate-900">{email}</span> is
+                not connected to a patient record. Speak to your clinic and they will
+                connect it for you.
+              </>
+            )}
           </p>
+
+          {pending && (
+            <div className="mt-5 rounded-xl bg-amber-50 ring-1 ring-amber-200 px-4 py-3">
+              <p className="text-xs text-amber-800 leading-relaxed">
+                This step protects your privacy. Nobody can see a patient record until
+                clinic staff have confirmed it belongs to them.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={() => supabase.auth.signOut()}
             className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl
