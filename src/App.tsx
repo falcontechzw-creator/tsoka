@@ -8,6 +8,8 @@ import PatientDetail from './components/PatientDetail'
 import Dashboard from './components/Dashboard'
 import DevicesPage from './components/DevicesPage'
 import SettingsPage from './components/SettingsPage'
+import SurveyPage from './components/SurveyPage'
+import SurveyResults from './components/SurveyResults'
 import LoginPage from './components/LoginPage'
 import PatientApp from './components/patient/PatientApp'
 import ConnectionBanner from './components/ConnectionBanner'
@@ -69,6 +71,9 @@ export default function App() {
       .then(({ count }) => setAlertCount(count ?? 0))
   }, [session, role, nav, openPatient])
 
+  // Public questionnaire, no sign in needed.
+  if (window.location.pathname.startsWith('/survey')) return <SurveyPage />
+
   if (!session) return <LoginPage />
 
   if (checking) {
@@ -128,7 +133,7 @@ export default function App() {
         )}
         {nav === 'devices' && <DevicesPage />}
         {nav === 'alerts' && placeholder('Alerts', 'Open alerts appear on Patients and Overview.')}
-        {nav === 'reports' && placeholder('Reports', 'Exportable clinical and cost reports.')}
+        {nav === 'reports' && <SurveyResults />}
         {nav === 'settings' && <SettingsPage myRole={role ?? 'nurse'} />}
       </AppShell>
     </>
