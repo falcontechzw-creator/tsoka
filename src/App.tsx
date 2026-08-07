@@ -7,15 +7,15 @@ import PatientsPage from './components/PatientsPage'
 import PatientDetail from './components/PatientDetail'
 import Dashboard from './components/Dashboard'
 import DevicesPage from './components/DevicesPage'
+import LoginPage from './components/LoginPage'
+import PatientApp from './components/patient/PatientApp'
 import SettingsPage from './components/SettingsPage'
 import SurveyPage from './components/SurveyPage'
 import SurveyResults from './components/SurveyResults'
 import AlertsPage from './components/AlertsPage'
-import LoginPage from './components/LoginPage'
-import PatientApp from './components/patient/PatientApp'
 import ConnectionBanner from './components/ConnectionBanner'
 import { startQueue } from './lib/offline'
-import { Construction, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 type Role = 'patient' | 'nurse' | 'clinic_admin' | 'cimas_admin'
 
@@ -98,21 +98,6 @@ export default function App() {
     )
   }
 
-  const placeholder = (title: string, note: string) => (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">{title}</h1>
-      <p className="text-slate-500 text-sm mb-6">{note}</p>
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm
-                      px-6 py-16 text-center">
-        <Construction size={26} className="mx-auto text-slate-300 mb-3" />
-        <p className="font-medium text-slate-700">Not built yet</p>
-        <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-          This section is planned. Patients, Overview and Devices are fully working.
-        </p>
-      </div>
-    </div>
-  )
-
   return (
     <>
       <ConnectionBanner />
@@ -132,13 +117,14 @@ export default function App() {
         {nav === 'overview' && (
           <Dashboard onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
         )}
-        {nav === 'devices' && <DevicesPage />}
         {nav === 'alerts' && (
           <AlertsPage onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
         )}
         {nav === 'reports' && <SurveyResults />}
+        {nav === 'devices' && <DevicesPage />}
         {nav === 'settings' && <SettingsPage myRole={role ?? 'nurse'} />}
       </AppShell>
     </>
   )
 }
+
