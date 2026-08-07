@@ -110,7 +110,7 @@ export default function FootMap({ readings, asymmetry }: Props) {
           <ul className="text-sm text-amber-800 space-y-0.5">
             {flagged.map(([pos, d]) => (
               <li key={pos}>
-                {POSITION_LABELS[pos as FootPosition]} — {d.toFixed(1)} °C difference
+                {POSITION_LABELS[pos as FootPosition]}, {d.toFixed(1)} °C difference
               </li>
             ))}
           </ul>

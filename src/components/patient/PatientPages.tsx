@@ -4,7 +4,7 @@ import FootMap from '../FootMap'
 import type { usePatientData } from './usePatientData'
 import { formatDate, initials, avatarTint } from '../../lib/types'
 import {
-  Check, Send, CalendarDays, MapPin, Phone,
+   Check, Send, CalendarDays, MapPin, Phone,
   ShieldCheck, Lightbulb, TriangleAlert, Pill, Plus,
 } from 'lucide-react'
 import {
@@ -224,13 +224,13 @@ export function Readings({ d }: { d: Data }) {
                     {new Date(v.recorded_at).toLocaleDateString()}
                   </td>
                   <td className="text-center px-3 py-3 text-slate-900 font-medium">
-                    {v.glucose_mmol ?? '—'}
+                    {v.glucose_mmol ?? 'None'}
                   </td>
                   <td className="text-center px-3 py-3 text-slate-900 font-medium">
-                    {v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : '—'}
+                    {v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : 'None'}
                   </td>
                   <td className="text-center px-3 py-3 text-slate-900 font-medium">
-                    {v.weight_kg ?? '—'}
+                    {v.weight_kg ?? 'None'}
                   </td>
                 </tr>
               ))}
@@ -498,11 +498,11 @@ export function Help() {
 export function Profile({ d, email }: { d: Data; email: string }) {
   const { patient, clinicName } = d
   const rows: [string, string][] = [
-    ['Full name', patient?.full_name ?? '—'],
+    ['Full name', patient?.full_name ?? 'Not recorded'],
     ['Email', email],
-    ['Phone', patient?.phone ?? '—'],
-    ['Diabetes type', patient?.diabetes_type ?? '—'],
-    ['Clinic', clinicName ?? '—'],
+    ['Phone', patient?.phone ?? 'Not recorded'],
+    ['Diabetes type', patient?.diabetes_type ?? 'Not recorded'],
+    ['Clinic', clinicName ?? 'Not recorded'],
     ['Allergies', patient?.allergies ?? 'None recorded'],
   ]
 
@@ -543,3 +543,4 @@ export function Profile({ d, email }: { d: Data; email: string }) {
     </div>
   )
 }
+

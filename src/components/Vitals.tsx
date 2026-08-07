@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { writeOrQueue } from '../lib/offline'
 
 type Vital = {
   id: string
@@ -62,7 +63,7 @@ export default function Vitals({ patientId }: Props) {
     }
     setSaving(true)
     setError('')
-    const { error } = await supabase.from('vitals').insert({
+    const payload = {
       patient_id: patientId,
       glucose_mmol: glucose ? Number(glucose) : null,
       systolic: systolic ? Number(systolic) : null,
@@ -70,8 +71,12 @@ export default function Vitals({ patientId }: Props) {
       weight_kg: weight ? Number(weight) : null,
       meds_taken: meds,
       source: 'app',
-    })
-    if (error) { setError(error.message); setSaving(false); return }
+    }
+  const result = await writeOrQueue('vitals', payload,
+      async () => await supabase.from('vitals').insert(payload))
+    if (result === 'queued') {
+      setError('Saved on this device. It will upload when you are back online.')
+    }
     setGlucose(''); setSystolic(''); setDiastolic(''); setWeight('')
     setOpen(false)
     setSaving(false)
@@ -158,7 +163,7 @@ export default function Vitals({ patientId }: Props) {
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
             <p className={`text-2xl font-bold ${glucoseTone(latest.glucose_mmol)}`}>
-              {latest.glucose_mmol ?? '—'}
+              {latest.glucose_mmol ?? 'None'}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">Glucose mmol/L</p>
           </div>
@@ -166,13 +171,13 @@ export default function Vitals({ patientId }: Props) {
             <p className={`text-2xl font-bold ${bpTone(latest.systolic, latest.diastolic)}`}>
               {latest.systolic && latest.diastolic
                 ? `${latest.systolic}/${latest.diastolic}`
-                : '—'}
+                : 'None'}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">Blood pressure</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 px-4 py-3">
             <p className="text-2xl font-bold text-tsoka-deep">
-              {latest.weight_kg ?? '—'}
+              {latest.weight_kg ?? 'None'}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">Weight kg</p>
           </div>
@@ -202,17 +207,17 @@ export default function Vitals({ patientId }: Props) {
                     {new Date(v.recorded_at).toLocaleDateString()}
                   </td>
                   <td className={`text-center px-2 py-2.5 font-medium ${glucoseTone(v.glucose_mmol)}`}>
-                    {v.glucose_mmol ?? '—'}
+                    {v.glucose_mmol ?? 'None'}
                   </td>
                   <td className={`text-center px-2 py-2.5 font-medium ${bpTone(v.systolic, v.diastolic)}`}>
-                    {v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : '—'}
+                    {v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : 'None'}
                   </td>
                   <td className="text-center px-2 py-2.5 text-slate-600">
-                    {v.weight_kg ?? '—'}
+                    {v.weight_kg ?? 'None'}
                   </td>
                   <td className="text-center px-2 py-2.5">
                     {v.meds_taken == null
-                      ? <span className="text-slate-400">—</span>
+                      ? <span className="text-slate-400">Not recorded</span>
                       : v.meds_taken
                         ? <span className="text-emerald-600 font-medium">Yes</span>
                         : <span className="text-red-600 font-medium">No</span>}
