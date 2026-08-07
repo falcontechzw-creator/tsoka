@@ -4,8 +4,10 @@ import PatientShell from './PatientShell'
 import type { PatientNav } from './PatientShell'
 import PatientHome from './PatientHome'
 import {
-  FootHealth, Readings, Appointments, Medication, Messages, Help, Profile,
+  FootHealth, Readings, Medication, Messages, Help, Profile,
 } from './PatientPages'
+import AppointmentsPatient from './AppointmentsPatient'
+import DeleteAccount from '../DeleteAccount'
 import { usePatientData } from './usePatientData'
 import { Loader2, Clock, LogOut, Footprints } from 'lucide-react'
 
@@ -121,11 +123,22 @@ export default function PatientApp({ email }: { email: string }) {
       {nav === 'home' && <PatientHome d={d} go={setNav} />}
       {nav === 'foot' && <FootHealth d={d} />}
       {nav === 'readings' && <Readings d={d} />}
-      {nav === 'appointments' && <Appointments d={d} />}
+      {nav === 'appointments' && (
+        <AppointmentsPatient
+          patientId={d.patient.id}
+          clinicId={d.patient.clinic_id}
+          clinicName={d.clinicName}
+        />
+      )}
       {nav === 'medication' && <Medication d={d} />}
       {nav === 'messages' && <Messages d={d} />}
       {nav === 'help' && <Help />}
-      {nav === 'profile' && <Profile d={d} email={email} />}
+      {nav === 'profile' && (
+        <>
+          <Profile d={d} email={email} />
+          <DeleteAccount />
+        </>
+      )}
     </PatientShell>
   )
 }

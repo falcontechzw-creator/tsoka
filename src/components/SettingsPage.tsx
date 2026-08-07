@@ -5,6 +5,7 @@ import {
   Link2, Link2Off, Search, Check, X, ShieldCheck, UserCog, UserPlus,
   Info, Loader2, Inbox, Mail, Trash2,
 } from 'lucide-react'
+import DeleteAccount from './DeleteAccount'
 
 type Patient = {
   id: string
@@ -547,6 +548,8 @@ export default function SettingsPage({ myRole }: Props) {
           </div>
         </section>
       )}
+
+      <DeleteAccount />
 
       <div className="mt-5 rounded-2xl bg-slate-100 p-5 flex items-start gap-3">
         <Info size={17} className="text-slate-500 shrink-0 mt-0.5" />

@@ -10,6 +10,7 @@ import DevicesPage from './components/DevicesPage'
 import SettingsPage from './components/SettingsPage'
 import SurveyPage from './components/SurveyPage'
 import SurveyResults from './components/SurveyResults'
+import AlertsPage from './components/AlertsPage'
 import LoginPage from './components/LoginPage'
 import PatientApp from './components/patient/PatientApp'
 import ConnectionBanner from './components/ConnectionBanner'
@@ -132,7 +133,9 @@ export default function App() {
           <Dashboard onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
         )}
         {nav === 'devices' && <DevicesPage />}
-        {nav === 'alerts' && placeholder('Alerts', 'Open alerts appear on Patients and Overview.')}
+        {nav === 'alerts' && (
+          <AlertsPage onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
+        )}
         {nav === 'reports' && <SurveyResults />}
         {nav === 'settings' && <SettingsPage myRole={role ?? 'nurse'} />}
       </AppShell>
