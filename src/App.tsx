@@ -13,6 +13,7 @@ import SettingsPage from './components/SettingsPage'
 import SurveyPage from './components/SurveyPage'
 import SurveyResults from './components/SurveyResults'
 import AlertsPage from './components/AlertsPage'
+import AppointmentsStaff from './components/AppointmentsStaff'
 import ConnectionBanner from './components/ConnectionBanner'
 import { startQueue } from './lib/offline'
 import { Loader2 } from 'lucide-react'
@@ -120,6 +121,9 @@ export default function App() {
         {nav === 'alerts' && (
           <AlertsPage onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
         )}
+        {nav === 'appointments' && (
+          <AppointmentsStaff onOpenPatient={(id) => { setOpenPatient(id); setNav('patients') }} />
+        )}
         {nav === 'reports' && <SurveyResults />}
         {nav === 'devices' && <DevicesPage />}
         {nav === 'settings' && <SettingsPage myRole={role ?? 'nurse'} />}
@@ -127,4 +131,3 @@ export default function App() {
     </>
   )
 }
-

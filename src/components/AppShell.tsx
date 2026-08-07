@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import {
   Users, LayoutDashboard, Bell, FileText, Tablet, Settings,
-  LogOut, Menu, X, Footprints,
+  LogOut, Menu, X, Footprints, CalendarDays,
 } from 'lucide-react'
 
-export type NavKey = 'patients' | 'overview' | 'alerts' | 'reports' | 'devices' | 'settings'
+export type NavKey =
+  | 'patients' | 'overview' | 'appointments'
+  | 'alerts' | 'reports' | 'devices' | 'settings'
 
 type Props = {
   active: NavKey
@@ -23,6 +25,7 @@ const PRIMARY: { key: NavKey; label: string; icon: typeof Users }[] = [
 
 const TOOLS: { key: NavKey; label: string; icon: typeof Users }[] = [
   { key: 'alerts', label: 'Alerts', icon: Bell },
+  { key: 'appointments', label: 'Appointments', icon: CalendarDays },
   { key: 'reports', label: 'Reports', icon: FileText },
   { key: 'devices', label: 'Devices', icon: Tablet },
   { key: 'settings', label: 'Settings', icon: Settings },
